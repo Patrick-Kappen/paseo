@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { app } from "electron";
@@ -131,6 +132,15 @@ export function getStagingUserId(): Promise<string> {
   return cachedStagingUserIdPromise;
 }
 
+/**
+ * electron-builder writes app-update.yml only when a publish provider is
+ * configured. Builds without it, such as the Nix package, must not replace
+ * themselves with an official release.
+ */
+export function hasUpdateFeed(resourcesPath: string | undefined): boolean {
+  return resourcesPath !== undefined && existsSync(path.join(resourcesPath, "app-update.yml"));
+}
+
 export function shouldInstallAppUpdateOnQuit(input: {
   platform: NodeJS.Platform;
   isAppImage: boolean;
@@ -224,7 +234,7 @@ class ElectronAppUpdateRuntime implements AppUpdateRuntime {
 
 const appUpdateService = createAppUpdateService({
   runtime: new ElectronAppUpdateRuntime(),
-  isPackaged: () => app.isPackaged,
+  isPackaged: () => app.isPackaged && hasUpdateFeed(process.resourcesPath),
   now: () => Date.now(),
   bucket: async () => bucketFromStagingUserId(await getStagingUserId()),
   reportCheckError: (error) => {
