@@ -1,3 +1,4 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -40,11 +41,24 @@ import {
   bucketFromStagingUserId,
   checkForAppUpdate,
   createAppUpdateLifecycleLogger,
+  hasUpdateFeed,
   resolveStagingUserId,
   rolloutManifestSchema,
   shouldAdmitToRollout,
   shouldInstallAppUpdateOnQuit,
 } from "./auto-updater";
+
+const updateFeedDir = mkdtempSync(path.join(os.tmpdir(), "paseo-update-feed-"));
+writeFileSync(path.join(updateFeedDir, "app-update.yml"), "provider: github\n");
+(process as { resourcesPath?: string }).resourcesPath = updateFeedDir;
+
+describe("hasUpdateFeed", () => {
+  it("only lets builds that ship an update feed update themselves", () => {
+    expect(hasUpdateFeed(updateFeedDir)).toBe(true);
+    expect(hasUpdateFeed(os.tmpdir())).toBe(false);
+    expect(hasUpdateFeed(undefined)).toBe(false);
+  });
+});
 
 describe("checkForAppUpdate", () => {
   it("treats an unpublished channel manifest as an unavailable update", async () => {
