@@ -1,5 +1,6 @@
 import { getForgeDefinition } from "@getpaseo/protocol/forge-manifest";
 import { normalizeHost } from "@getpaseo/protocol/git-remote";
+import { createAzureDevOpsService, isAzureDevOpsHost } from "./azure-devops-service.js";
 import { createGitHubService, probeGitHubHost } from "./github-service.js";
 import type { ForgeService } from "./forge-service.js";
 import { createGiteaService, resolveGiteaFamilyForge } from "./gitea-service.js";
@@ -167,6 +168,9 @@ export const defaultForgeRegistry = new ForgeRegistry([
     },
   ],
   ["codeberg", { createService: createGiteaService, matchesHost: matchesCloudHost("codeberg") }],
+  // Legacy organizations live on {org}.visualstudio.com, which no bounded
+  // cloudHosts list can name, so the adapter owns the matcher.
+  ["azure-devops", { createService: createAzureDevOpsService, matchesHost: isAzureDevOpsHost }],
 ]);
 
 export function createForgeService(forge: string): ForgeService | null {

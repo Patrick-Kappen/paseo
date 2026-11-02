@@ -298,3 +298,40 @@ describe("deriveMergeCapability (gitea)", () => {
     expect(capability?.canDisableAutoMerge).toBe(false);
   });
 });
+
+describe("deriveMergeCapability (azure-devops)", () => {
+  const azureFacts = (overrides: Record<string, unknown> = {}): ForgeSpecificStatusFacts => ({
+    forge: "azure-devops",
+    status: "active",
+    mergeStatus: "succeeded",
+    isDraft: false,
+    autoCompleteEnabled: false,
+    blockingPoliciesPassed: true,
+    allowedMethods: ["squash"],
+    ...overrides,
+  });
+
+  it("allows completing only when the merge and the required policies succeeded", () => {
+    expect(deriveMergeCapability(azureFacts())).toMatchObject({
+      directMergeReady: true,
+      canEnableAutoMerge: true,
+      allowedMethods: ["squash"],
+    });
+    expect(
+      deriveMergeCapability(azureFacts({ blockingPoliciesPassed: false }))?.directMergeReady,
+    ).toBe(false);
+    expect(deriveMergeCapability(azureFacts({ mergeStatus: "conflicts" }))?.directMergeReady).toBe(
+      false,
+    );
+    expect(deriveMergeCapability(azureFacts({ isDraft: true }))?.canEnableAutoMerge).toBe(false);
+  });
+
+  it("offers to cancel an auto-complete instead of merging", () => {
+    expect(deriveMergeCapability(azureFacts({ autoCompleteEnabled: true }))).toMatchObject({
+      directMergeReady: false,
+      canEnableAutoMerge: false,
+      autoMergeEnabled: true,
+      canDisableAutoMerge: true,
+    });
+  });
+});
