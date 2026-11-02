@@ -414,9 +414,10 @@ function tokenExpiry(token: z.infer<typeof AccessTokenSchema>, now: number): num
 
 /**
  * Bearer tokens come from `az account get-access-token`, so the daemon reuses
- * whichever identity the Azure CLI is signed in with (AZURE_CONFIG_DIR is
- * respected). A PAT in AZURE_DEVOPS_EXT_PAT, the variable the azure-devops CLI
- * extension reads, takes precedence.
+ * whichever identity the Azure CLI is signed in with. PASEO_AZURE_CONFIG_DIR
+ * points only this lookup at another az profile, so agents keep the daemon's
+ * AZURE_CONFIG_DIR. A PAT in AZURE_DEVOPS_EXT_PAT, the variable the
+ * azure-devops CLI extension reads, takes precedence.
  */
 function createAzCredentialProvider(): (options: {
   refresh: boolean;
@@ -435,7 +436,11 @@ function createAzCredentialProvider(): (options: {
       const result = await execCommand(
         azPath,
         ["account", "get-access-token", "--resource", AZURE_DEVOPS_RESOURCE, "--output", "json"],
-        { timeout: AZ_TIMEOUT_MS, maxBuffer: 1024 * 1024 },
+        {
+          timeout: AZ_TIMEOUT_MS,
+          maxBuffer: 1024 * 1024,
+          ...(key ? { envOverlay: { AZURE_CONFIG_DIR: key } } : {}),
+        },
       );
       stdout = result.stdout;
     } catch (error) {
@@ -461,7 +466,7 @@ function createAzCredentialProvider(): (options: {
     if (pat) {
       return { authorization: `Basic ${Buffer.from(`:${pat}`).toString("base64")}` };
     }
-    const key = process.env.AZURE_CONFIG_DIR ?? "";
+    const key = process.env.PASEO_AZURE_CONFIG_DIR ?? process.env.AZURE_CONFIG_DIR ?? "";
     if (
       !refresh &&
       cached &&
