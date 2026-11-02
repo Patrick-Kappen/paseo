@@ -218,6 +218,15 @@ are stale, run `npm run build:server`.
   (`manual`) from blocking jobs (`manual` plus `action_required`). A failed
   allowed-failure job carries the `warning` trait, and `canceling` remains active
   until GitLab reports a terminal status.
+- Azure DevOps has no CLI that covers PRs, so its adapter calls the REST API
+  with a token from `az account get-access-token` (or `AZURE_DEVOPS_EXT_PAT`).
+  The daemon talks to Azure DevOps as whichever identity
+  `PASEO_AZURE_CONFIG_DIR`, else `AZURE_CONFIG_DIR`, points at; a service principal that never signed in to the organization gets
+  403 "not materialized", which the adapter reports as sign-in.
+- Azure DevOps checks come from the PR's policy evaluations, not from builds on
+  the branch. An expired validation build stays `pending` with
+  `action_required` and carries no check-run id: retention may already have
+  deleted the build.
 - GitHub PR polling owns one account-wide GraphQL budget. Coordinate retained
   targets per host, batch their reads, and stop until GitHub's reset time when
   the reserve is exhausted. Never add a per-target GitHub request to the poll

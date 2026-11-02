@@ -110,6 +110,17 @@ export const FORGE_DEFINITIONS: ForgeDefinition[] = [
     signIn: { cli: "tea", command: "tea login add" },
     cloudHosts: ["codeberg.org"],
   },
+  {
+    id: "azure-devops",
+    displayName: "Azure DevOps",
+    changeRequestAbbrev: "PR",
+    changeRequestNoun: "pull request",
+    changeRequestNumberPrefix: "!",
+    issueNumberPrefix: "#",
+    iconKind: "azure-devops",
+    signIn: { cli: "az", command: "az login" },
+    cloudHosts: ["dev.azure.com", "ssh.dev.azure.com"],
+  },
 ];
 
 /** Forge definitions only present in dev builds (none today; mirrors providers). */
