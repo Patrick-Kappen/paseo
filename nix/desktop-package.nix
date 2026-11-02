@@ -126,12 +126,15 @@ buildNpmPackage {
         cd packages/desktop
         # The Nix output is not a distributable DMG, so leave it unsigned and
         # disable the hardened runtime that requires a matching signature.
+        # Without a publish provider there is no app-update.yml, so the app
+        # never replaces itself with an official release.
         CSC_IDENTITY_AUTO_DISCOVERY=false \
           ../../node_modules/.bin/electron-builder \
             --config electron-builder.yml \
             --dir \
             --mac \
             --publish never \
+            --config.publish=null \
             --config.electronDist="$electron_dist" \
             --config.buildVersion=${lib.escapeShellArg buildVersion} \
             --config.mac.identity=null \
